@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------
+// User & Auth
+// -----------------------------------------
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String?
+  image         String?
+  
+  // Relações com o Meta
+  metaToken     String?   // Token criptografado
+  metaAccountId String?   // ID da conta de anúncios
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  campaigns     Campaign[]
+}
+
+// -----------------------------------------
+// Inventory Management
+// -----------------------------------------
+model Product {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sku         String   @unique
+  name        String
+  description String?
+  price       Float
+  cost        Float?   // Custo do produto para cálculo de margem
+  
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  status      ProductStatus @default(ACTIVE)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adLinks     ProductAdLink[]
+}
+
+enum ProductStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+// -----------------------------------------
+// Meta Ads Integration
+// -----------------------------------------
+model Campaign {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  metaCampaignId  String   @unique
+  name            String
+  status          String   // ACTIVE, PAUSED, etc.
+  dailyBudget     Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ads             Ad[]
+}
+
+model Ad {
+  id              String   @id @default(cuid())
+  campaignId      String
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  
+  metaAdId        String   @unique
+  name            String
+  status          String
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  metrics         AdMetric[]
+  productLinks    ProductAdLink[]
+}
+
+// Tabela de relacionamento (Muitos para Muitos) entre Anúncios e Produtos
+model ProductAdLink {
+  id        String   @id @default(cuid())
+  productId String
+  adId      String
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ad        Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, adId])
+}
+
+// -----------------------------------------
+// Metrics / Analytics
+// -----------------------------------------
+model AdMetric {
+  id          String   @id @default(cuid())
+  adId        String
+  ad          Ad       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  
+  date        DateTime // Data das métricas
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  spend       Float    @default(0)
+  purchases   Int      @default(0)
+  revenue     Float    @default(0)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([adId, date])
+}
