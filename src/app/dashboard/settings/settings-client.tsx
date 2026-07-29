@@ -22,7 +22,7 @@ export function SettingsClient({ session, dbUser }: { session: any, dbUser?: any
   const handleConnectMeta = () => {
     const clientId = process.env.NEXT_PUBLIC_FACEBOOK_CLIENT_ID || "1361586715477884"
     const redirectUri = `${window.location.origin}/api/meta/callback`
-    const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=ads_read,read_insights`
+    const url = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&scope=ads_read`
     window.location.href = url
   }
 
